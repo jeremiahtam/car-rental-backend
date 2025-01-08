@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return $request->user();
+/**Admin Login */
+// Route::post('/school-login', [AdminUserController::class, 'schoolLogin']);
+// Route::post('/recover-password', [AdminUserController::class, 'recoverPassword']);
+// Route::post('/confirm-password-reset-token', [AdminUserController::class, 'confirmPasswordResetToken']);
+// Route::post('/reset-password', [AdminUserController::class, 'resetPassword']);
+Route::group(['middleware' => ['auth:sanctum', 'ability:admin']], function () {
+  //
 });
