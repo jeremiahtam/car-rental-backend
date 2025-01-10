@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -14,11 +16,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-/**Admin Login */
-// Route::post('/school-login', [AdminUserController::class, 'schoolLogin']);
-// Route::post('/recover-password', [AdminUserController::class, 'recoverPassword']);
-// Route::post('/confirm-password-reset-token', [AdminUserController::class, 'confirmPasswordResetToken']);
-// Route::post('/reset-password', [AdminUserController::class, 'resetPassword']);
+/**Admin Section */
 Route::group(['middleware' => ['auth:sanctum', 'ability:admin']], function () {
-  //
+});
+
+/** User Section */
+Route::post('/user-login', [UserController::class, 'login']);
+Route::post('/user-signup', [UserController::class, 'create']);
+Route::group(['middleware' => ['auth:sanctum', 'ability:user']], function () {
+  Route::get('/user-info', [UserController::class, 'getUserInfoByToken']);
 });
