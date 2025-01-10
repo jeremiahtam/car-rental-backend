@@ -19,6 +19,7 @@ return new class extends Migration {
       $table->string('profile_pic');
       $table->string('password');
       $table->rememberToken();
+      $table->boolean('removed')->default(0);
       $table->timestamps();
     });
   }
