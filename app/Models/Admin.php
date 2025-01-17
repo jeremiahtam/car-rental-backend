@@ -20,7 +20,10 @@ class Admin extends Authenticatable
   protected $fillable = [
     'name',
     'email',
+    'phone_number',
+    'profile_pic',
     'password',
+    'removed',
   ];
 
   /**
@@ -31,6 +34,7 @@ class Admin extends Authenticatable
   protected $hidden = [
     'password',
     'remember_token',
+    'removed',
   ];
 
   /**

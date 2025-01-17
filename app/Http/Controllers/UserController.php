@@ -9,6 +9,11 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 class UserController extends Controller
 {
+  /**
+   * Summary of login
+   * @param \Illuminate\Http\Request $request
+   * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+   */
   public function login(Request $request)
   {
     $fields = $request->validate([
@@ -33,25 +38,25 @@ class UserController extends Controller
 
     $token = $user->createToken($fields['email'], ['user'])->plainTextToken;
 
-    $response = [
+    return response([
       'success' => true,
       'message' => 'Successfully logged in',
       'data' => [
         'token' => $token,
       ]
-    ];
-
-    return response($response, 201);
+    ], 200);
   }
 
+  /**
+   * Summary of getUserInfoByToken
+   * @param \Illuminate\Http\Request $request
+   * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+   */
   public function getUserInfoByToken(Request $request)
   {
-    $fields = $request->validate([
-      'token' => 'required',
-    ]);
-
-    $token = PersonalAccessToken::findToken($fields['token']);
+    $token = PersonalAccessToken::findToken($request->bearerToken());
     $user = $token->tokenable;
+
     $neededData = [
       'id' => $user->id,
       'name' => $user->name,
@@ -70,10 +75,12 @@ class UserController extends Controller
   {
     $fields = $request->validate([
       'name' => 'required|string',
-      'email' => 'required|email|unique:schools,email',
-      'phoneNumber' => 'required|string',
+      'email' => 'required|email|unique:users,email',
+      'phoneNumber' => 'required|phone|string',
       'password' => 'required|string',
       'confirmPassword' => 'required|string|same:password',
+    ], [
+      'phone' => 'Invalid number.'
     ]);
 
     $createUser = User::create([
@@ -81,6 +88,7 @@ class UserController extends Controller
       'email' => $fields['email'],
       'phone_number' => $fields['phoneNumber'],
       'password' => Hash::make($fields['password']),
+      'removed' => 0,
     ]);
 
     if (!$createUser) {
