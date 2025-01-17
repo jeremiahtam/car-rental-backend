@@ -71,6 +71,11 @@ class UserController extends Controller
     ], 200);
   }
 
+  /**
+   * Summary of create
+   * @param \Illuminate\Http\Request $request
+   * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+   */
   public function create(Request $request)
   {
     $fields = $request->validate([
@@ -134,11 +139,61 @@ class UserController extends Controller
   }
 
   /**
-   * Update the specified resource in storage.
+   * Summary of update
+   * @param \Illuminate\Http\Request $request
+   * @param string $id
+   * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
    */
   public function update(Request $request, string $id)
   {
-    //
+    $fields = $request->validate([
+      'name' => 'required|string',
+      'phoneNumber' => 'required|phone|string',
+    ], [
+      'phone' => 'Invalid number.'
+    ]);
+
+    $updateUser = User::where('id', $id)->update([
+      'name' => $fields['name'],
+      'phone_number' => $fields['phoneNumber'],
+    ]);
+
+    if (!$updateUser) {
+      return response([
+        'success' => false,
+        'message' => 'Could not update account',
+      ], 400);
+    }
+
+    return response([
+      'success' => true,
+      'message' => 'Successfully updated account',
+      'data' => $updateUser,
+    ], 201);
+  }
+
+  /**
+   * Summary of delete
+   * @param string $id
+   * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+   */
+  public function delete(string $id)
+  {
+    $user = User::where('id', $id)->update([
+      'removed' => true,
+    ]);
+
+    if (!$user) {
+      return response([
+        'success' => false,
+        'message' => 'User not found',
+      ], 404);
+    }
+
+    return response([
+      'success' => true,
+      'message' => 'Successfully deleted user',
+    ], 200);
   }
 
   /**
