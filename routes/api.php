@@ -23,6 +23,10 @@ Route::group(['middleware' => ['auth:sanctum', 'ability:admin']], function () {
 /** User Section */
 Route::post('/user-login', [UserController::class, 'login']);
 Route::post('/user-signup', [UserController::class, 'create']);
+Route::post('/user-recover-password', [UserController::class, 'recoverPassword']);
+Route::post('/user-confirm-password-reset-token', [UserController::class, 'confirmPasswordResetToken']);
+Route::post('/user-reset-password', [UserController::class, 'resetPassword']);
+
 Route::group(['middleware' => ['auth:sanctum', 'ability:user']], function () {
   Route::get('/user-info', [UserController::class, 'getUserInfoByToken']);
 });

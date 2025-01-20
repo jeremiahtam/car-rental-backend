@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PasswordResetEmail;
+use App\Models\PasswordResetTokens;
+use Exception;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
+use Mail;
 
 class UserController extends Controller
 {
@@ -47,6 +51,151 @@ class UserController extends Controller
     ], 200);
   }
 
+  public function recoverPassword(Request $request)
+  {
+    $fields = $request->validate([
+      'email' => 'required|email|string|max:100',
+    ]);
+
+    //check email
+    $user = User::where('email', $fields['email'])->first();
+
+    if (!$user) {
+      return response(
+        [
+          'success' => false,
+          'message' => "An error occured",
+          'errors' => [
+            'email' => 'That email cannot be found.'
+          ]
+        ],
+        400
+      );
+    }
+
+    $checkExistingResetRequest = PasswordResetTokens::where([['email', $fields['email']]]);
+
+    //delete if token already exists
+    if ($checkExistingResetRequest->exists()) {
+      $checkExistingResetRequest->delete();
+    }
+
+    $token = rand(10000, 99999);
+
+    try {
+      Mail::mailer('smtp-no-reply')->to($fields['email'])
+        ->send(new PasswordResetEmail($token));
+    } catch (Exception $ex) {
+      return response(
+        [
+          'success' => false,
+          'message' => $ex->getMessage(),
+        ],
+        400
+      );
+    }
+
+    $insertToken = PasswordResetTokens::insert(['email' => $fields['email'], 'token' => $token]);
+
+    if (!$insertToken) {
+      return response(
+        [
+          'success' => false,
+          'message' => "Network error",
+        ],
+        400
+      );
+    }
+    return response([
+      'success' => true,
+      'message' => "A reset token has been sent to your email address",
+      'data' => $insertToken
+    ], 201);
+  }
+
+  public function confirmPasswordResetToken(Request $request)
+  {
+    $fields = $request->validate([
+      'email' => 'string|required|email|max:100',
+      'token' => 'digits:5|required',
+    ]);
+
+    $checkForToken = PasswordResetTokens::where([
+      ['email', $fields['email']],
+      ['token', $fields['token']]
+    ]);
+
+    if (!$checkForToken) {
+      return response([
+        'success' => false,
+        'message' => "Network error. Try again later",
+      ], 400);
+    }
+
+    /** delete if token already exists */
+    if ($checkForToken->exists()) {
+      return response([
+        'success' => true,
+        'message' => "Token exists",
+      ], 201);
+    } else {
+      return response([
+        'success' => false,
+        'message' => "Token does not exist",
+        'errors' => [
+          'token' => 'Token does not exist'
+        ]
+      ], 400);
+    }
+  }
+
+  public function resetPassword(Request $request)
+  {
+    $fields = $request->validate([
+      'email' => 'string|required|email|max:100',
+      'token' => 'digits:5|required',
+      'password' => 'required|string|min:8',
+      'password_confirmation' => 'required|same:password|min:8',
+    ]);
+
+    $confirmToken = $this->confirmPasswordResetToken(new Request([
+      'email' => $fields['email'],
+      'token' => $fields['token'],
+    ]));
+
+    if ($confirmToken['success'] == false) {
+      return $confirmToken;
+    }
+    //update user password
+    $resetPassword = User::where([
+      ['email', $fields['email']],
+    ])->update([
+          'password' => Hash::make($fields['password'])
+        ]);
+
+    if (!$resetPassword) {
+      response([
+        'success' => false,
+        'message' => 'Could not reset password'
+      ], 400);
+    }
+
+    $deleteToken = PasswordResetTokens::where([
+      'email' => $fields['email'],
+      'token' => $fields['token'],
+    ])->delete();
+
+    if (!$deleteToken) {
+      response([
+        'success' => false,
+        'message' => 'Network error try again later'
+      ], 400);
+    }
+    return response([
+      'success' => true,
+      'message' => 'Password Changed'
+    ], 201);
+  }
   /**
    * Summary of getUserInfoByToken
    * @param \Illuminate\Http\Request $request
@@ -112,30 +261,6 @@ class UserController extends Controller
         'token' => $token,
       ],
     ], 201);
-  }
-
-  /**
-   * Store a newly created resource in storage.
-   */
-  public function store(Request $request)
-  {
-    //
-  }
-
-  /**
-   * Display the specified resource.
-   */
-  public function show(string $id)
-  {
-    //
-  }
-
-  /**
-   * Show the form for editing the specified resource.
-   */
-  public function edit(string $id)
-  {
-    //
   }
 
   /**
