@@ -58,12 +58,12 @@ class UserController extends Controller
   }
 
   /**
-   * Summary of update
+   * Summary of edit
    * @param \Illuminate\Http\Request $request
    * @param string $id
    * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
    */
-  public function update(Request $request, string $id)
+  public function edit(Request $request, string $id)
   {
     $fields = $request->validate([
       'name' => 'required|string',
@@ -72,6 +72,7 @@ class UserController extends Controller
       'phone' => 'Invalid number.'
     ]);
 
+    // if (auth('user')->check()) {}
     $updateUser = User::where('id', $id)->update([
       'name' => $fields['name'],
       'phone_number' => $fields['phoneNumber'],
@@ -272,7 +273,7 @@ class UserController extends Controller
       'email' => 'string|required|email|max:100',
       'token' => 'digits:5|required',
       'password' => 'required|string|min:8',
-      'password_confirmation' => 'required|same:password|min:8',
+      'confirmPassword' => 'required|same:password|min:8',
     ]);
 
     $confirmToken = $this->confirmPasswordResetToken(new Request([
@@ -311,6 +312,38 @@ class UserController extends Controller
     return response([
       'success' => true,
       'message' => 'Password Changed'
+    ], 201);
+  }
+  /**
+   * Summary of changePassword
+   * @param \Illuminate\Http\Request $request
+   * @param mixed $userId
+   * @return \Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+   */
+  public function changePassword(Request $request, $userId)
+  {
+    $fields = $request->validate([
+      'password' => 'required|string|min:8',
+      'confirmPassword' => 'required|same:password|min:8',
+    ]);
+    $newPassword = Hash::make($fields['password']);
+    $changePassword = User::where('id', $userId)
+      ->where('removed', 0)
+      ->update([
+        'password' => $newPassword,
+      ]);
+
+    if (!$changePassword) {
+      return response([
+        'success' => false,
+        'message' => 'Password could not be changed',
+        'data' => $changePassword
+      ], 400);
+    }
+    return response([
+      'success' => true,
+      'message' => 'Password successfully changed',
+      'data' => $changePassword
     ], 201);
   }
 

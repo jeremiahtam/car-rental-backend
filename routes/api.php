@@ -18,6 +18,16 @@ use Illuminate\Support\Facades\Route;
 
 /**Admin Section */
 Route::group(['middleware' => ['auth:sanctum', 'ability:admin']], function () {
+  /** actions on self */
+
+  /** actions on drivers */
+
+  /** actions on users */
+  Route::post('/admin-create-user', [UserController::class, 'create']);
+  Route::put('/admin-edit-user/{userId}', [UserController::class, 'edit']);
+  Route::put('/admin-delete-user/{userId}', [UserController::class, 'delete']);
+  Route::post('/admin-upload-user-profile-pic', [UserController::class, 'uploadProfilePic']);
+  Route::put('/admin-change-user-password/{userId}', [UserController::class, 'changePassword']);
 });
 
 /** User Section */
@@ -29,4 +39,7 @@ Route::post('/user-reset-password', [UserController::class, 'resetPassword']);
 
 Route::group(['middleware' => ['auth:sanctum', 'ability:user']], function () {
   Route::get('/user-info', [UserController::class, 'getUserInfoByToken']);
+  Route::put('/user-edit/{userId}', [UserController::class, 'edit']);
+  Route::post('/user-upload-profile-pic', [UserController::class, 'uploadProfilePic']);
+  Route::put('/user-change-password/{userId}', [UserController::class, 'changePassword']);
 });
